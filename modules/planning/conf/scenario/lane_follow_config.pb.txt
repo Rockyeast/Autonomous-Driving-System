@@ -1,0 +1,35 @@
+scenario_type: LANE_FOLLOW
+stage_type: LANE_FOLLOW_DEFAULT_STAGE
+stage_config: {
+  stage_type: LANE_FOLLOW_DEFAULT_STAGE
+  enabled: true
+  task_type: LANE_CHANGE_DECIDER
+  task_type: NEW_TEST_DECIDER
+  task_type: ST_GENERATE_DECIDER
+  # task_type: SPEED_DP_OPTIMIZER
+  # task_type: SPEED_CONVEX_DECIDER
+  # task_type: SPEED_QP_OPTIMIZER
+  # task_type: PATH_SPEED_MATCH_DECIDER
+
+  task_config: {
+    task_type: LANE_CHANGE_DECIDER
+    lane_change_decider_config {
+      enable_lane_change_urgency_check: true
+    }
+  }
+  
+  task_config: {
+    task_type: NEW_TEST_DECIDER
+    new_test_decider_config {
+    
+    }
+  }
+  
+  task_config: {
+    task_type: ST_GENERATE_DECIDER
+    st_generate_decider_config {
+    
+    }
+  }
+  
+}

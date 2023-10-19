@@ -1,0 +1,109 @@
+一、配置文件
+
+1. 在stage配置文件中新增task名称
+在em_planner/modules/planning/conf/scenario/lane_follow_config.pb.txt 文件中添加一个task
+例如：添加一个叫NEW_TEST的决策任务task
+原来的文件内容：
+scenario_type: LANE_FOLLOW
+stage_type: LANE_FOLLOW_DEFAULT_STAGE
+stage_config: {
+  stage_type: LANE_FOLLOW_DEFAULT_STAGE
+  enabled: true
+  task_type: LANE_CHANGE_DECIDER
+
+  task_config: {
+    task_type: LANE_CHANGE_DECIDER
+    lane_change_decider_config {
+      enable_lane_change_urgency_check: true
+    }
+  }
+}
+新增后内容：
+scenario_type: LANE_FOLLOW
+stage_type: LANE_FOLLOW_DEFAULT_STAGE
+stage_config: {
+  stage_type: LANE_FOLLOW_DEFAULT_STAGE
+  enabled: true
+  task_type: LANE_CHANGE_DECIDER
+  task_type: NEW_TEST_DECIDER
+
+  task_config: {
+    task_type: LANE_CHANGE_DECIDER
+    lane_change_decider_config {
+      enable_lane_change_urgency_check: true
+    }
+  }
+  task_config: {
+    task_type: NEW_TEST_DECIDER
+    new_test_decider_config {
+      # 这里想写参数就写，可以调用得到，不想写下面有地方可以写全局参数
+    }
+  }
+}
+
+
+2. 定义task中要用到的全局参数数据结构
+在文件 modules/planning/proto/task_config.proto 最末尾添加以下：
+其中，argn1为全局变量的名称（随便取），类型为double，1为序号（不是值），如果有多个，序号依次递增，[default = 6.0]是指定默认值为6
+
+message NewTestDeciderConfig {
+  optional double argn1 = 1 [default = 6.0];
+}
+
+
+3.在modules/planning/conf/planning_config.pb.txt 文件中为全局参数赋值
+举例：为LANE_CHANGE_DECIDER决策任务task添加全局参数
+在文件最末尾，参照以下格式添加：
+default_task_config {
+  task_type: LANE_CHANGE_DECIDER
+  new_test_decider_config {
+    argn1: 20  
+  }
+}
+
+
+4.为新的task定义类型
+在文件modules/planning/proto/planning_config.proto的，
+在“enum TaskType”括号内末尾添加新的task名字:
+NEW_TEST_DECIDER = 29;  // demo  (序号根据上一个进行叠加+1)
+在“oneof task_config”括号内末尾添加配置名称：
+NewTestDeciderConfig new_test_decider_config = 24; // demo (序号根据上一个进行叠加+1)
+
+
+
+以上所有代码外文件的添加就完成了，需要把build文件夹文件全部删除，在build下执行：cmake ..    确认无错误！
+
+
+
+
+二、代码部分
+
+1. 在目录modules/planning/tasks/deciders下根据上面要取的task名称新建文件夹：
+举例：新建文件夹：new_test_decider，文件夹中新建new_test_decider.cc 和 new_test_decider.h文件。
+cc和h文件必须要包含的内容参考工程。编写完毕后需要在CmakeLists.txt文件中加入new_test_decider文件夹，否则编译的时候会找不到。
+添加方法：要添加四个地方：
+set(planning_tasks_deciders_newtest_dir modules/planning/tasks/deciders/new_test_decider) # new_test 举例
+include_directories (${planning_tasks_deciders_newtest_dir}) # new_test 举例
+aux_source_directory (${planning_tasks_deciders_newtest_dir} planning_tasks_deciders_newtest_LIST)  # new_test 举例
+add_library( ${planning_tasks_deciders_newtest_LIST} )
+
+
+
+2. main函數中，TaskFactory::Init(config_, injector_); 進入init函數
+
+添加头文件： #include ""modules/planning/tasks/deciders/new_test_decider/new_test_decider.h""
+
+按task执行顺序，新增即可
+举例：注册new_test任务
+task_factory_.Register(
+      TaskConfig::NEW_TEST_DECIDER,
+      [](const TaskConfig& config,
+         const std::shared_ptr<DependencyInjector>& injector) -> Task* {
+        return new NewTestDecider(config, injector);
+      });
+      
+ 3. 这时候可以在build下执行：make -j8
+ 编译没有报错，则说明新task添加成功，可以到新建的源文件如：new_test_decider.cc中编写详细task逻辑代码
+ 代码编写流程最好参照模板所写的，风格统一。
+ 若逻辑代码过多，可以在新建cc和h文件，将一些算法放在外部进行处理（包含头文件和在cmakelist中添加上新的文件夹就行），process()函数中尽量保持整洁。
+ 

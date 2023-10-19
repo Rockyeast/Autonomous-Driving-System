@@ -1,0 +1,8 @@
+apollo7.0 planning模块，public_road planner规划器需要的输入信息：
+
+1.配置文件：各个task和stage的配置参数
+2.高精地图给的前方重叠区域（路口、信号灯、停止信号、避让信号等）的信息，用于后续路径边界的决策
+3.frame.GetPadMsgDrivingAction() 从人机交互信息来抉择下一场景，用于更新场景时
+4.frame.local_view().routing->routing_request().dead_end_info().target_point(); 高精地图给的终点信息
+5.frame.vehicle_state(); 车辆当前状态
+
